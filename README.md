@@ -22,7 +22,7 @@ livre=HubDilicom::Book.new("EAN13_DU_LIVRE","GLN_DU_DISTRIBUTEUR")
 client.get_book_onix(livre)
 livre.onix => message ONIX
 client.get_book_availability(livre)
-livre.available => booléen disponibilité
+livre.available => bool dispo
 ```
 
 De la même manière pour une commande :
@@ -33,7 +33,7 @@ ligne_de_commande=HubDilicom::OrderLine.new(livre,1)
 commande=HubDilicom::Order.new("VOTRE_IDENTIFIANT_COMMANDE_UNIQUE",[ligne_de_commande])
 client.send_order(commande,client)
 
-ligne_commande.links.first.url => URL de téléchargement du lien de commande
+ligne_commande.links.first.url => URL du fichier
 ```
 
 En cas de problème, une exception est déclenchée :
@@ -42,4 +42,4 @@ client.send_order(commande_deja_existante,client)
 3025594049409 : Order with referenceCommande 'TESTCOMMANDE' already exists (HubDilicom::OrderDuplicatedError)
 ```
 
-Pour plus de détail, voir le code source.
+Pour plus de détails, voir le code source.
