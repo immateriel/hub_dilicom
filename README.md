@@ -27,18 +27,18 @@ livre.available => bool dispo
 
 De la même manière pour une commande :
 ```ruby
-client=HubDilicom::Customer.new("VOTRE_IDENTIFIANT_CLIENT_UNIQUE","Nom du client","Pays","Code postal","Ville")
+acheteur=HubDilicom::Customer.new("VOTRE_IDENTIFIANT_CLIENT_UNIQUE","Nom du client","Pays","Code postal","Ville")
 livre=HubDilicom::Book.new("EAN13_DU_LIVRE","GLN_DU_DISTRIBUTEUR")
 ligne_de_commande=HubDilicom::OrderLine.new(livre,1)
 commande=HubDilicom::Order.new("VOTRE_IDENTIFIANT_COMMANDE_UNIQUE",[ligne_de_commande])
-client.send_order(commande,client)
+client.send_order(commande,acheteur)
 
 ligne_commande.links.first.url => URL du fichier
 ```
 
 En cas de problème, une exception est déclenchée :
 ```
-client.send_order(commande_deja_existante,client)
+client.send_order(commande_deja_existante,acheteur)
 3025594049409 : Order with referenceCommande 'TESTCOMMANDE' already exists (HubDilicom::OrderDuplicatedError)
 ```
 
