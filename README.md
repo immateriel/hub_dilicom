@@ -1,6 +1,6 @@
 ### Librairie Ruby d'accès au Hub Dilicom
 
-Interface fortement objet s'interfaçant avec les services SOAP du Hub Dilicom https://hub-dilicom.centprod.com/documentation/doku.php?id=hub_principal:start
+Interface fortement objet pour les services SOAP du Hub Dilicom https://hub-dilicom.centprod.com/documentation/doku.php?id=hub_principal:start
 
 ### Usage
 
