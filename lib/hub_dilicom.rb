@@ -153,7 +153,10 @@ module HubDilicom
       @glnReseller=gln
       @passwordReseller=password
 
-      @client=Savon.client(:wsdl => @wsdl,:log=>test)
+      @client=Savon.client(:wsdl => @wsdl,
+                           :open_timeout=> 900,
+                           :read_timeout=> 900,
+                           :log=>test)
 
     end
 
