@@ -173,7 +173,7 @@ module HubDilicom
 
     # Récupération du flux ONIX dans un File
     def get_full_onix_tempfile(since)
-      url=self.get_notices_url(since)
+      url=self.get_full_onix_url(since)
       if url
         open(url)
       end
