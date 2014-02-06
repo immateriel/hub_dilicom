@@ -3,7 +3,11 @@ require 'pp'
 
 module HubDilicom
 
-  class InvalidArgumentsError < StandardError
+  # erreurs
+  class Error < StandardError
+  end
+
+  class Warning < StandardError
   end
 
   class OrderDuplicatedError < StandardError
@@ -12,8 +16,24 @@ module HubDilicom
   class OrderNotFoundError < StandardError
   end
 
-  class Error < StandardError
+  class UnknownGlnError < StandardError
   end
+
+  class EanNotFoundError < StandardError
+  end
+
+  class EanNotAvailableError < StandardError
+  end
+
+  class PlatformAccessDeniedError < StandardError
+  end
+
+  class AuthenticationError < StandardError
+  end
+
+  class InvalidArgumentsError < StandardError
+  end
+
 
   class Book
     attr_accessor :ean13, :gln_distributor, :price, :onix, :available, :message
@@ -294,7 +314,20 @@ module HubDilicom
           raise OrderDuplicatedError, message[:return_message]
         when "ORDERID_NOT_FOUND"
           raise OrderNotFoundError, message[:return_message]
+        when "WARNING"
+          raise Warning, message[:return_message]
+        when "UNKNOWN_GLN"
+          raise UnknownGlnError, message[:return_message]
+        when "EAN_NOT_FOUND"
+          raise EanNotFoundError, message[:return_message]
+        when "EAN_NOT_AVAILABLE"
+          raise EanNotAvailableError, message[:return_message]
+        when "PLATFORM_ACCES_DENIED"
+          raise PlatformAccessDeniedError, message[:return_message]
+        when "AUTHENTICATION_ERROR"
+          raise AuthenticationError, message[:return_message]
       end
+
     end
 
     def raise_error(message)
