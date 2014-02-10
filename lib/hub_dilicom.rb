@@ -96,7 +96,7 @@ module HubDilicom
   class OrderLine
     attr_accessor :book, :quantity, :reference, :identifier, :links
 
-    def initialize(book, quantity=nil, reference=nil)
+    def initialize(book, quantity=1, reference=nil)
       @reference=reference
       @book=book
       @quantity=quantity
