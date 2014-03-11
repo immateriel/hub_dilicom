@@ -174,8 +174,8 @@ module HubDilicom
       @passwordReseller=password
 
       @client=Savon.client(:wsdl => @wsdl,
-                           :open_timeout=> 900,
-                           :read_timeout=> 900,
+                           :open_timeout=> 3600,
+                           :read_timeout=> 3600,
                            :log=>test)
 
     end
