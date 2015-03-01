@@ -176,8 +176,8 @@ module HubDilicom
       @glnReseller=gln
       @passwordReseller=password
 
-      @glnContractor=gln
-      @glnDelivery=gln
+      @glnContractor=nil
+      @glnDelivery=nil
 
       savon_options={:wsdl => @wsdl,
                      :open_timeout=> 3600,
