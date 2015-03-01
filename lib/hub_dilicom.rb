@@ -334,7 +334,7 @@ module HubDilicom
 
     private
     def message_with_auth(attrs)
-      {:message => {:glnReseller => @glnReseller, :passwordReseller => @passwordReseller}.merge(attrs)}
+      {:message => {:glnReseller => @glnReseller, :passwordReseller => @passwordReseller}.merge(attrs.delete_if { |k, v| not v })}
     end
 
     def raise_error_message(message)
