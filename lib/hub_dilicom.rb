@@ -315,7 +315,7 @@ module HubDilicom
 
     # Récupération d'une commande
     def get_order(order)
-      response=@client.call(:get_order_detail, message_with_auth(order.to_hash([:order_id])))
+      response=@client.call(:get_order_detail, message_with_auth({:glnContractor=>@glnContractor}.merge(order.to_hash([:order_id]))))
       message=response.body[:get_order_detail_response][:order_line]
       if message
         case message
