@@ -1,5 +1,6 @@
 require 'savon'
 require 'pp'
+require 'im_helpers/territories'
 
 module HubDilicom
 
@@ -36,16 +37,17 @@ module HubDilicom
 
 
   class Book
-    attr_accessor :ean13, :gln_distributor, :price, :onix, :available, :message
+    attr_accessor :ean13, :gln_distributor, :price, :currency, :onix, :available, :message
 
-    def initialize(ean13, gln_distributor, price=nil)
+    def initialize(ean13, gln_distributor, price=nil, currency="EUR")
       @ean13=ean13
       @gln_distributor=gln_distributor
       @price=price
+      @currency=currency
     end
 
     def to_hash(keys)
-      {:ean13 => @ean13, :gln_distributor => @gln_distributor, :unit_price => @price}.delete_if { |k, v| not v }.select { |k, v| keys.include?(k) }
+      {:ean13 => @ean13, :gln_distributor => @gln_distributor, :unit_price => @price, :currency=>@currency}.delete_if { |k, v| not v }.select { |k, v| keys.include?(k) }
     end
   end
 
@@ -94,17 +96,18 @@ module HubDilicom
   end
 
   class OrderLine
-    attr_accessor :book, :quantity, :reference, :identifier, :links
+    attr_accessor :book, :quantity, :reference, :identifier, :links, :unit_price_excluding_tax, :special_code
 
-    def initialize(book, quantity=1, reference=nil)
+    def initialize(book, quantity=1, reference=nil, special_code=nil)
       @reference=reference
       @book=book
       @quantity=quantity
       @links=[]
+      @special_code=special_code
     end
 
     def to_hash(keys)
-      book.to_hash([:ean13, :gln_distributor, :unit_price]).merge({:quantity => @quantity, :line_reference => @reference}.delete_if { |k, v| not v }.select { |k, v| keys.include?(k) })
+      book.to_hash([:ean13, :gln_distributor, :unit_price]).merge({:unit_price_excluding_tax=>0}).merge(book.to_hash([ :currency])).merge({  :special_code=>@special_code,:quantity => @quantity, :line_reference => @reference}.delete_if { |k, v| not v }.select { |k, v| keys.include?(k) })
     end
 
   end
@@ -142,7 +145,7 @@ module HubDilicom
   class Customer
     attr_accessor :identifier, :civility, :first_name, :last_name, :email, :country, :postal_code, :city
 
-    def initialize(identifier, last_name, country, postal_code, city, civility=nil, first_name=nil, email=nil)
+    def initialize(identifier, last_name, country, postal_code=" ", city=" ", civility=nil, first_name=nil, email=nil)
       @identifier=identifier
       @last_name=last_name
       @country=country
@@ -165,25 +168,46 @@ module HubDilicom
     # Initialisation du client prenant comme argument le glnReseller et le passwordReseller
     def initialize(gln, password, test=false)
       if test
-        @wsdl="https://hub-test.centprod.com/v1/hub-numerique/hub-numerique-services.wsdl"
+        @wsdl="https://hub-test.centprod.com/v3/hub-numerique/hub-numerique-services.wsdl"
       else
-        @wsdl="https://hub-dilicom.centprod.com/v1/hub-numerique/hub-numerique-services.wsdl"
+        @wsdl="https://hub-dilicom.centprod.com/v3/hub-numerique/hub-numerique-services.wsdl"
       end
 
       @glnReseller=gln
       @passwordReseller=password
 
-      @client=Savon.client(:wsdl => @wsdl,
-                           :open_timeout=> 3600,
-                           :read_timeout=> 3600,
-                           :log=>test)
+      @glnContractor=gln
+      @glnDelivery=gln
 
+      savon_options={:wsdl => @wsdl,
+                     :open_timeout=> 3600,
+                     :read_timeout=> 3600,
+                     :log=>test}
+      if test
+        savon_options[:ssl_verify_mode]=:none
+      end
+      @client=Savon.client(savon_options)
+    end
+
+    def set_contractor_gln(gln)
+      @glnContractor=gln
+    end
+
+    def set_delivery_gln(gln)
+      @glnDelivery=gln
+    end
+
+    def calculated_unit_price_excl_tax(price,country)
+      tax=ImHelpers::Territories.country_ebook_vat(country)
+      tax_coef=("%.#{3}f" % (100.0/(tax+100.0))).to_f
+      price_excl_tax=(price*tax_coef).round
+      price_excl_tax
     end
 
     # Récupération de l'URL du flux ONIX depuis la date since
     def get_full_onix_url(since)
       since_str=since.strftime("%Y-%m-%dT%H:%M:%S")
-      response=@client.call(:get_notices, message_with_auth(:sinceDate => since_str))
+      response=@client.call(:get_notices, message_with_auth({:glnContractor=>@glnContractor}.merge(:sinceDate => since_str)))
       message=response.body[:get_notices_response][:onix_file_url]
       if message
         message[:http_link]
@@ -210,7 +234,7 @@ module HubDilicom
 
     # Récupération de l'ONIX des livres en argument
     def get_books_onix(books)
-      response=@client.call(:get_detail_notices, message_with_auth(:notice => books.to_hash([:ean13, :gln_distributor])))
+      response=@client.call(:get_detail_notices, message_with_auth({:glnContractor=>@glnContractor}.merge(:notice => books.to_hash([:ean13, :gln_distributor]))))
       message=response.body[:get_detail_notices_response][:detail_notice]
       if message
         case message
@@ -230,14 +254,18 @@ module HubDilicom
     end
 
     # Vérification de la disponibilité du livre en argument
-    def get_book_availability(book)
-      self.get_books_availability(Books.new([book]))
+    def get_book_availability(book,country="FR")
+      self.get_books_availability(Books.new([book]),country)
       book
     end
 
     # Vérification de la disponibilité des livres en argument
-    def get_books_availability(books)
-      response=@client.call(:check_availability, message_with_auth(:check_availability_line => books.to_hash([:ean13, :gln_distributor, :unit_price])))
+    def get_books_availability(books,country="FR")
+      books_h=books.to_hash([:ean13, :gln_distributor, :unit_price])
+      books_h.each do |book|
+        book[:unit_price_excluding_tax]=calculated_unit_price_excl_tax(book[:unit_price],country)
+      end
+      response=@client.call(:check_availability, message_with_auth({:glnContractor=>@glnContractor}.merge({:country=>country}).merge({:check_availability_line => books_h})))
       message=response.body[:check_availability_response][:check_availability_response_line]
       if message
         case message
@@ -263,7 +291,13 @@ module HubDilicom
       unless book_owner
         book_owner=customer
       end
-      response=@client.call(:send_order, message_with_auth(order.to_hash([:order_id]).merge({:customer_id => customer.identifier}.merge(:final_book_owner => book_owner.to_hash).merge(order.to_hash([:order_request_line])))))
+      order_line_h=order.to_hash([:order_request_line])
+      pp order_line_h
+      order_line_h[:order_request_line].each do |line|
+        line[:unit_price_excluding_tax]=calculated_unit_price_excl_tax(line[:unit_price],customer.country)
+      end
+
+      response=@client.call(:send_order, message_with_auth(order.to_hash([:order_id]).merge({:glnContractor=>@glnContractor,:glnDelivery=>@glnDelivery}).merge({:customer_id => customer.identifier}.merge(:final_book_owner => book_owner.to_hash).merge(order_line_h))))
       message=response.body[:send_order_response][:order_line]
       if message
         case message
