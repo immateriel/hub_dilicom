@@ -296,7 +296,6 @@ module HubDilicom
         book_owner=customer
       end
       order_line_h=order.to_hash([:order_request_line])
-      pp order_line_h
       order_line_h[:order_request_line].each do |line|
         line[:unit_price_excluding_tax]=calculated_unit_price_excl_tax(line[:unit_price], customer.country)
       end
