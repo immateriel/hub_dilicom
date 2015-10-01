@@ -258,17 +258,16 @@ module HubDilicom
     end
 
     # Vérification de la disponibilité du livre en argument
-    def get_book_availability(book, country="FR", currency="EUR")
-      self.get_books_availability(Books.new([book]), country, currency)
+    def get_book_availability(book, country="FR")
+      self.get_books_availability(Books.new([book]), country)
       book
     end
 
     # Vérification de la disponibilité des livres en argument
-    def get_books_availability(books, country="FR", currency="EUR")
-      books_h=books.to_hash([:ean13, :gln_distributor, :unit_price])
+    def get_books_availability(books, country="FR")
+      books_h=books.to_hash([:ean13, :gln_distributor, :unit_price, :currency])
       books_h.each do |book|
         book[:unit_price_excluding_tax]=calculated_unit_price_excl_tax(book[:unit_price], country)
-        book[:currency]=currency
       end
       response=@client.call(:check_availability, message_with_auth({:glnContractor => @glnContractor}.merge({:country => country}).merge({:check_availability_line => books_h})))
       message=response.body[:check_availability_response][:check_availability_response_line]
