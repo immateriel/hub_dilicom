@@ -47,7 +47,7 @@ module HubDilicom
     end
 
     def to_hash(keys)
-      {:ean13 => @ean13, :gln_distributor => @gln_distributor, :unit_price => @price, :currency => @currency}.delete_if { |k, v| not v }.select { |k, v| keys.include?(k) }
+      {:ean13 => @ean13, :gln_distributor => @gln_distributor, :unit_price => @price, :unit_price_excluding_tax=>0, :currency => @currency}.delete_if { |k, v| not v }.select { |k, v| keys.include?(k) }
     end
   end
 
