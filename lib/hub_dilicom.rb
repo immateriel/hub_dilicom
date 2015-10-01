@@ -265,7 +265,7 @@ module HubDilicom
 
     # Vérification de la disponibilité des livres en argument
     def get_books_availability(books, country="FR")
-      books_h=books.to_hash([:ean13, :gln_distributor, :unit_price, :currency])
+      books_h=books.to_hash([:ean13, :gln_distributor, :unit_price, :unit_price_excluding_tax, :currency])
       books_h.each do |book|
         book[:unit_price_excluding_tax]=calculated_unit_price_excl_tax(book[:unit_price], country)
       end
