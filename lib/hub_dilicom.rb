@@ -166,7 +166,7 @@ module HubDilicom
     attr_accessor :client
 
     # Initialisation du client prenant comme argument le glnReseller et le passwordReseller
-    def initialize(gln, password, test=false)
+    def initialize(gln, password, test=false, debug=false)
       if test
         @wsdl="https://hub-test.centprod.com/v3/hub-numerique/hub-numerique-services.wsdl"
       else
@@ -182,7 +182,7 @@ module HubDilicom
       savon_options={:wsdl => @wsdl,
                      :open_timeout => 3600,
                      :read_timeout => 3600,
-                     :log => test}
+                     :log => debug}
       if test
         savon_options[:ssl_verify_mode]=:none
       end
